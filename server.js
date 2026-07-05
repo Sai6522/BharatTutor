@@ -41,19 +41,19 @@ const LANGUAGE_NAMES = {
   od: "Odia",
 };
 
-// TTS voice mapping per language
+// TTS voice mapping per language (updated speaker names)
 const TTS_VOICES = {
-  "en-IN": "meera",
-  "hi-IN": "meera",
-  "bn-IN": "meera",
-  "te-IN": "meera",
-  "ta-IN": "meera",
-  "mr-IN": "meera",
-  "gu-IN": "meera",
-  "kn-IN": "meera",
-  "ml-IN": "meera",
-  "pa-IN": "meera",
-  "od-IN": "meera",
+  "en-IN": "anushka",
+  "hi-IN": "anushka",
+  "bn-IN": "anushka",
+  "te-IN": "anushka",
+  "ta-IN": "anushka",
+  "mr-IN": "anushka",
+  "gu-IN": "anushka",
+  "kn-IN": "anushka",
+  "ml-IN": "anushka",
+  "pa-IN": "anushka",
+  "od-IN": "anushka",
 };
 
 /**
