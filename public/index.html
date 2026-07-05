@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BharatTutor — AI Tutor for India</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">🎓</span>
+        <span class="logo-text">BharatTutor</span>
+        <span class="logo-badge">Powered by Sarvam AI</span>
+      </div>
+      <div class="header-tagline">Ask anything. Learn in your language.</div>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <!-- Controls row -->
+    <section class="controls-row">
+      <!-- Language selector -->
+      <div class="control-group">
+        <label class="control-label">🌐 Language</label>
+        <div class="lang-grid" id="langGrid">
+          <button class="lang-btn" data-lang="en">EN</button>
+          <button class="lang-btn active" data-lang="hi">हिं</button>
+          <button class="lang-btn" data-lang="bn">বাং</button>
+          <button class="lang-btn" data-lang="te">తె</button>
+          <button class="lang-btn" data-lang="ta">தமி</button>
+          <button class="lang-btn" data-lang="mr">मर</button>
+          <button class="lang-btn" data-lang="gu">ગુ</button>
+          <button class="lang-btn" data-lang="kn">ಕನ್</button>
+          <button class="lang-btn" data-lang="ml">മ</button>
+          <button class="lang-btn" data-lang="pa">ਪੰ</button>
+          <button class="lang-btn" data-lang="od">ଓ</button>
+        </div>
+        <div class="lang-name-display" id="langNameDisplay">Hindi</div>
+      </div>
+
+      <!-- Subject selector -->
+      <div class="control-group">
+        <label class="control-label">📚 Subject</label>
+        <select class="subject-select" id="subjectSelect">
+          <option value="general">General</option>
+          <option value="mathematics">Mathematics</option>
+          <option value="science">Science</option>
+          <option value="physics">Physics</option>
+          <option value="chemistry">Chemistry</option>
+          <option value="biology">Biology</option>
+          <option value="history">History</option>
+          <option value="geography">Geography</option>
+          <option value="english">English</option>
+          <option value="computer science">Computer Science</option>
+          <option value="economics">Economics</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Question input -->
+    <section class="ask-section">
+      <div class="ask-box">
+        <textarea
+          id="questionInput"
+          class="question-input"
+          placeholder="Type your question here... e.g. What is photosynthesis? / 2+2 kya hota hai?"
+          rows="3"
+        ></textarea>
+        <div class="ask-actions">
+          <div class="char-count" id="charCount">0 / 500</div>
+          <button class="ask-btn" id="askBtn">
+            <span class="ask-btn-icon">✨</span>
+            <span class="ask-btn-text">Ask BharatTutor</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick questions -->
+      <div class="quick-questions">
+        <span class="quick-label">Try:</span>
+        <button class="quick-btn" data-q="What is photosynthesis?">Photosynthesis</button>
+        <button class="quick-btn" data-q="What is the Pythagorean theorem?">Pythagoras</button>
+        <button class="quick-btn" data-q="Who was Mahatma Gandhi?">Mahatma Gandhi</button>
+        <button class="quick-btn" data-q="What is Newton's first law of motion?">Newton's Law</button>
+        <button class="quick-btn" data-q="What is the capital of India?">Capital of India</button>
+      </div>
+    </section>
+
+    <!-- Loading state -->
+    <div class="loading-card" id="loadingCard" style="display:none;">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">
+        <strong>BharatTutor is thinking...</strong>
+        <span id="loadingSubtext">Getting the best answer for you 🙏</span>
+      </div>
+    </div>
+
+    <!-- Answer card -->
+    <section class="answer-card" id="answerCard" style="display:none;">
+      <div class="answer-header">
+        <div class="answer-header-left">
+          <span class="answer-icon">💡</span>
+          <div>
+            <div class="answer-title">BharatTutor says:</div>
+            <div class="answer-meta" id="answerMeta"></div>
+          </div>
+        </div>
+        <div class="answer-header-right">
+          <button class="audio-btn" id="audioBtn" style="display:none;" title="Play voice answer">
+            <span id="audioBtnIcon">🔊</span>
+            <span id="audioBtnText">Listen</span>
+          </button>
+          <button class="copy-btn" id="copyBtn" title="Copy answer">📋 Copy</button>
+        </div>
+      </div>
+
+      <div class="answer-body">
+        <div class="answer-text" id="answerText"></div>
+        <div class="answer-english" id="answerEnglish" style="display:none;">
+          <div class="english-toggle" id="englishToggle">Show English version ▾</div>
+          <div class="english-text" id="englishText" style="display:none;"></div>
+        </div>
+      </div>
+
+      <audio id="audioPlayer" style="display:none;"></audio>
+    </section>
+
+    <!-- History section -->
+    <section class="history-section" id="historySection" style="display:none;">
+      <div class="history-header">
+        <h3 class="history-title">📖 Recent Questions</h3>
+        <button class="clear-btn" id="clearBtn">Clear</button>
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>Built with ❤️ for Bharat · Powered by <strong>Sarvam AI</strong> · Supports 11 Indian languages</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
