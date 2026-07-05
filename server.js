@@ -244,45 +244,50 @@ app.get("*", (req, res) => {
 });
 
 /**
- * Reasoning models return step-by-step thinking. Extract just the final answer.
- * We look for a "Final Answer" / "Answer:" section, or fall back to the last
- * non-empty paragraph that doesn't look like a reasoning step header.
+ * Sarvam reasoning models stream thinking steps into reasoning_content.
+ * We ask the model directly for the answer in the user message, so we
+ * extract the clean final answer by skipping numbered reasoning steps.
  */
 function extractAnswer(text) {
   if (!text) return "";
 
-  // Try to find an explicit final answer section
-  const finalMatch = text.match(/(?:final answer|answer|conclusion)[:\s*\n]+(.+)/is);
-  if (finalMatch) {
-    return finalMatch[1].trim().split("\n\n")[0].trim();
+  // Split into lines and filter out reasoning meta-lines
+  const lines = text.split("\n");
+  const answerLines = [];
+  let inAnswer = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    // Skip blank lines at start
+    if (!inAnswer && !trimmed) continue;
+    // Skip lines that look like reasoning steps: "1. **Step**", "* **Analyze**", etc.
+    if (/^(\d+\.|[\*\-])\s*\*\*/.test(trimmed)) continue;
+    // Skip lines that are just numbering or single bullets
+    if (/^(\d+\.|[\*\-])\s*$/.test(trimmed)) continue;
+    // Skip lines referencing "rules", "constraints", "system prompt" instructions
+    if (/^(rule|constraint|instruction|note|important|step)s?\s*\d*:/i.test(trimmed)) continue;
+    // Once we have real content, collect it
+    if (trimmed.length > 0) {
+      inAnswer = true;
+      answerLines.push(trimmed);
+    }
+    // Stop after a few good sentences to keep it concise
+    if (inAnswer && answerLines.join(" ").length > 400) break;
   }
 
-  // Split into paragraphs, skip bullet-point reasoning steps, take last good paragraph
-  const paragraphs = text.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
-  for (let i = paragraphs.length - 1; i >= 0; i--) {
-    const p = paragraphs[i];
-    // Skip meta-reasoning lines like "* **Analyze...**"
-    if (/^\s*[\*\-]\s*\*\*/.test(p)) continue;
-    if (p.length > 30) return p;
-  }
-
-  // Last resort: return the whole text trimmed
-  return text.trim();
+  const result = answerLines.join(" ").trim();
+  return result || text.trim().substring(0, 500);
 }
 
 function buildSystemPrompt(langName, subject) {
-  return `You are BharatTutor, an expert AI tutor for Indian students (Class 1–12 and beyond).
+  return `You are BharatTutor, a friendly AI tutor for Indian students.
 
-IMPORTANT: Give ONLY the final answer. Do NOT show reasoning steps or analysis. Just the explanation.
+OUTPUT ONLY THE ANSWER. No reasoning steps. No numbered analysis. No meta-commentary.
 
-Your answer will be translated to ${langName}, so write clear simple English.
-
-Rules:
-- 3 to 6 sentences max for simple questions
-- Use Indian examples (rupees, festivals, Indian geography/history)
-- For math: show numbered steps clearly
-- End with one encouraging sentence
-- Subject: ${subject !== "general" ? subject : "any subject"}`;
+Write a clear, direct 2-5 sentence explanation that will be translated to ${langName}.
+Use simple English. Include an Indian example if relevant.
+End with one encouraging sentence.
+Subject: ${subject !== "general" ? subject : "any subject"}.`;
 }
 
 const PORT = process.env.PORT || 3000;
