@@ -1,5 +1,7 @@
 # 🎓 BharatTutor — AI Tutor for India
 
+### 🌐 Live Demo: [https://bharat-tutor.onrender.com](https://bharat-tutor.onrender.com)
+
 An AI-powered multilingual tutor that explains educational concepts in 11 Indian languages using **Sarvam AI**.
 
 ## ✨ Features
