@@ -86,8 +86,9 @@ app.post("/api/ask", async (req, res) => {
           { role: "system", content: systemPrompt },
           { role: "user", content: question },
         ],
-        max_tokens: 600,
+        max_tokens: 400,
         temperature: 0.7,
+        reasoning_effort: null, // disables reasoning — clean answer in content, no leakage
       },
       {
         headers: {
@@ -98,9 +99,7 @@ app.post("/api/ask", async (req, res) => {
     );
 
     const msg = chatResponse.data.choices[0].message;
-    // sarvam-30b is a reasoning model — answer is in content or reasoning_content
-    let rawText = msg.content || msg.reasoning_content || "";
-    let answerText = extractAnswer(rawText);
+    let answerText = msg.content || "";
 
     // Step 2: Translate answer if not English (Sarvam chat may respond in English)
     let translatedText = answerText;
@@ -243,51 +242,8 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-/**
- * Sarvam reasoning models stream thinking steps into reasoning_content.
- * We ask the model directly for the answer in the user message, so we
- * extract the clean final answer by skipping numbered reasoning steps.
- */
-function extractAnswer(text) {
-  if (!text) return "";
-
-  // Split into lines and filter out reasoning meta-lines
-  const lines = text.split("\n");
-  const answerLines = [];
-  let inAnswer = false;
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    // Skip blank lines at start
-    if (!inAnswer && !trimmed) continue;
-    // Skip lines that look like reasoning steps: "1. **Step**", "* **Analyze**", etc.
-    if (/^(\d+\.|[\*\-])\s*\*\*/.test(trimmed)) continue;
-    // Skip lines that are just numbering or single bullets
-    if (/^(\d+\.|[\*\-])\s*$/.test(trimmed)) continue;
-    // Skip lines referencing "rules", "constraints", "system prompt" instructions
-    if (/^(rule|constraint|instruction|note|important|step)s?\s*\d*:/i.test(trimmed)) continue;
-    // Once we have real content, collect it
-    if (trimmed.length > 0) {
-      inAnswer = true;
-      answerLines.push(trimmed);
-    }
-    // Stop after a few good sentences to keep it concise
-    if (inAnswer && answerLines.join(" ").length > 400) break;
-  }
-
-  const result = answerLines.join(" ").trim();
-  return result || text.trim().substring(0, 500);
-}
-
 function buildSystemPrompt(langName, subject) {
-  return `You are BharatTutor, a friendly AI tutor for Indian students.
-
-OUTPUT ONLY THE ANSWER. No reasoning steps. No numbered analysis. No meta-commentary.
-
-Write a clear, direct 2-5 sentence explanation that will be translated to ${langName}.
-Use simple English. Include an Indian example if relevant.
-End with one encouraging sentence.
-Subject: ${subject !== "general" ? subject : "any subject"}.`;
+  return `You are BharatTutor, a friendly AI tutor for Indian students. Answer in 2-5 clear sentences. Use simple English — your answer will be translated to ${langName}. Include an Indian example if helpful. End with one short encouraging sentence. Subject: ${subject !== "general" ? subject : "any subject"}.`;
 }
 
 const PORT = process.env.PORT || 3000;
