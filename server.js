@@ -81,12 +81,12 @@ app.post("/api/ask", async (req, res) => {
     const chatResponse = await axios.post(
       `${SARVAM_BASE_URL}/v1/chat/completions`,
       {
-        model: "sarvam-m",
+        model: "sarvam-30b",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: question },
         ],
-        max_tokens: 500,
+        max_tokens: 600,
         temperature: 0.7,
       },
       {
@@ -97,7 +97,10 @@ app.post("/api/ask", async (req, res) => {
       }
     );
 
-    let answerText = chatResponse.data.choices[0].message.content;
+    const msg = chatResponse.data.choices[0].message;
+    // sarvam-30b is a reasoning model — answer is in content or reasoning_content
+    let rawText = msg.content || msg.reasoning_content || "";
+    let answerText = extractAnswer(rawText);
 
     // Step 2: Translate answer if not English (Sarvam chat may respond in English)
     let translatedText = answerText;
@@ -240,23 +243,46 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+/**
+ * Reasoning models return step-by-step thinking. Extract just the final answer.
+ * We look for a "Final Answer" / "Answer:" section, or fall back to the last
+ * non-empty paragraph that doesn't look like a reasoning step header.
+ */
+function extractAnswer(text) {
+  if (!text) return "";
+
+  // Try to find an explicit final answer section
+  const finalMatch = text.match(/(?:final answer|answer|conclusion)[:\s*\n]+(.+)/is);
+  if (finalMatch) {
+    return finalMatch[1].trim().split("\n\n")[0].trim();
+  }
+
+  // Split into paragraphs, skip bullet-point reasoning steps, take last good paragraph
+  const paragraphs = text.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+  for (let i = paragraphs.length - 1; i >= 0; i--) {
+    const p = paragraphs[i];
+    // Skip meta-reasoning lines like "* **Analyze...**"
+    if (/^\s*[\*\-]\s*\*\*/.test(p)) continue;
+    if (p.length > 30) return p;
+  }
+
+  // Last resort: return the whole text trimmed
+  return text.trim();
+}
+
 function buildSystemPrompt(langName, subject) {
-  return `You are BharatTutor, an expert AI tutor specializing in Indian education. 
-You help students from Class 1 to Class 12 and beyond understand concepts clearly.
+  return `You are BharatTutor, an expert AI tutor for Indian students (Class 1–12 and beyond).
 
-Your response language will be translated to ${langName}, so write clear, simple English that translates well.
+IMPORTANT: Give ONLY the final answer. Do NOT show reasoning steps or analysis. Just the explanation.
 
-Guidelines:
-- Be encouraging, patient, and supportive like a good Indian teacher
-- Break down complex concepts into simple steps
-- Use Indian examples and contexts (Indian currency, festivals, geography, history)
-- Keep answers concise but complete (3-6 sentences for simple questions, more for complex ones)
-- If it's a math problem, show the steps clearly
-- If it's science, use relatable Indian examples
-- Always end with a motivating sentence
-- Subject focus: ${subject !== "general" ? subject : "any subject the student needs help with"}
+Your answer will be translated to ${langName}, so write clear simple English.
 
-Remember: You are helping Indian students learn better in their own language. Be warm and encouraging!`;
+Rules:
+- 3 to 6 sentences max for simple questions
+- Use Indian examples (rupees, festivals, Indian geography/history)
+- For math: show numbered steps clearly
+- End with one encouraging sentence
+- Subject: ${subject !== "general" ? subject : "any subject"}`;
 }
 
 const PORT = process.env.PORT || 3000;
